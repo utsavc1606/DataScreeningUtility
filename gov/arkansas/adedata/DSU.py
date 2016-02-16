@@ -15,8 +15,7 @@ from email.MIMEText import MIMEText
 from email import Encoders
 import os
 
-gmail_user = "ade.dsu@gmail.com"
-gmail_pwd = "adeere123$"
+
 
 
 ControlFile = open("DSU_Control.txt", "r")
@@ -24,6 +23,8 @@ ControlDict = {}
 for line in ControlFile:
     (key, val) = line.split("=")
     ControlDict[key.strip()] = val.strip()
+gmail_user = ControlDict['sender_id']
+gmail_pwd = ControlDict['sender_password']
 
 ReportFile = open(ControlDict['OutputReportPath'], 'w')
 start_time = time.time()
@@ -312,7 +313,7 @@ else:
 
 ControlFile.close()
 ReportFile.close()
-mail("utsav.chatterjee@arkansas.gov",
+mail(ControlDict['email_recipient'],
    "Data Screen Utility: File Analysis Report",
    "Data Screen Utility: File Analysis Report for "+ ControlDict['SourceFilePath'],
    ControlDict['OutputReportPath'])
