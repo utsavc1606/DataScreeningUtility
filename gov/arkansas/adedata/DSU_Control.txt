@@ -1,0 +1,5 @@
+SourceFilePath = /Users/utsavchatterjee/Desktop/AnalysisData/Discipline_Referral_Data_FY19_FY25.csv
+OutputReportPath = /Users/utsavchatterjee/Desktop/AnalysisData/Report_Discipline_Referral_Data_FY19_FY25.txt
+ProcessedFilePath = /Users/utsavchatterjee/Desktop/AnalysisData/Discipline_Referral_Data_FY19_FY25_output.csv
+CleansedFilePath = /Users/utsavchatterjee/Desktop/AnalysisData/Cleansed_Discipline_Referral_Data_FY19_FY25.csv
+OffsetRows = /Users/utsavchatterjee/Desktop/AnalysisData/OffsetRows.txt
