@@ -15,13 +15,20 @@ from email import Encoders
 import os
 import time
 
-ControlFile = open("DSU_Control.txt", "r")
-ControlDict = {}
-for line in ControlFile:
-    (key, val) = line.split("=")
-    ControlDict[key.strip()] = val.strip()
+try:
+    ControlFile = open("DSU_Control.txt", "r")
+    ControlDict = {}
+    for line in ControlFile:
+        try:
+            (key, val) = line.split("=")
+            ControlDict[key.strip()] = val.strip()
+        except:
+            print "Dictionary Error with DSU_Control.txt"   
+except IOError:
+    print "DSU_Control.txt not found."            
 gmail_user = ControlDict['sender_id']
-gmail_pwd = ControlDict['sender_password']    
+gmail_pwd = ControlDict['sender_password']
+    
 ReportFile = open(ControlDict['OutputReportPath'], 'w')
 start_time = time.time()
 
@@ -38,6 +45,7 @@ LNFDDict = {}
 DOBStatsDict = {}
 DOBFDDict = {}
 
+
 def BasicCounts(FileName):
     LineCount = 0
     f = open(FileName, 'r')
@@ -48,6 +56,7 @@ def BasicCounts(FileName):
     BasicCountsDict['FileName'] = FileName    
     BasicCountsDict['NumRows'] = str(LineCount)
     BasicCountsDict['NumColumns'] = str(len(Headers))
+    print "Basic counts: Complete"
 
 def CheckRowOffset(FileName):
     ErrorOutputFile = open(ControlDict['OffsetRows'], 'w')
@@ -66,7 +75,8 @@ def CheckRowOffset(FileName):
         ReportFile.write("\nOffset Test: Failed. Please check offset rows at location "+ ControlDict['OffsetRows'])
     else:
         ReportFile.write("\nOffset Test: Passed.")
-
+    print "Row Offset Check: Complete"
+    
 def CheckHeaders(FileName):
     f = open(FileName, 'r')
     reader = csv.reader(f, delimiter ='|')
@@ -75,7 +85,8 @@ def CheckHeaders(FileName):
         ReportFile.write ("\nHeaders Test: Passed")
     else:
         ReportFile.write ("\nHeaders Test: Failed. Please check first 5 headers.")
-
+    print "Check Headers: Complete"
+    
 def CheckSSNStats(FileName):
     SSNList = []
     f = open(FileName, 'r')
@@ -89,6 +100,7 @@ def CheckSSNStats(FileName):
     for k, v in frequencies.items()[:10]:
         SSNFDDict[k]=v
     SSNStatsDict['FreqDist'] = SSNFDDict
+    print "Check SSN Stats: Complete"
     
 def CheckRIDStats(FileName):
     RIDList = []
@@ -103,6 +115,7 @@ def CheckRIDStats(FileName):
     for k, v in frequencies.items()[:10]:
         RIDFDDict[k]=v
     RIDStatsDict['FreqDist'] = RIDFDDict    
+    print "Check RID Stats: Complete"
     
 def CheckFNStats(FileName):
     FNList = []
@@ -117,6 +130,7 @@ def CheckFNStats(FileName):
     for k, v in frequencies.items()[:10]:
         FNFDDict[k]=v
     FNStatsDict['FreqDist'] = FNFDDict    
+    print "Check FN Stats: Complete"
 
 def CheckLNStats(FileName):
     LNList = []
@@ -131,6 +145,7 @@ def CheckLNStats(FileName):
     for k, v in frequencies.items()[:10]:
         LNFDDict[k]=v
     LNStatsDict['FreqDist'] = LNFDDict
+    print "Check LN Stats: Complete"
 
 def CheckDOBStats(FileName):
     DOBList = []
@@ -145,13 +160,15 @@ def CheckDOBStats(FileName):
     for k, v in frequencies.items()[:10]:
         DOBFDDict[k]=v
     DOBStatsDict['FreqDist'] = DOBFDDict
+    print "Check DOB Stats: Complete"
 
 def CleanseData(FileName):
-    d = open(FileName, "r")
+    d = open(FileName, 'r')
     op = open(ControlDict['CleansedFilePath'], "w")
     for row in d:
         op.write(re.sub('[^A-Za-z0-9|\s\n.]+', '', row))
     d.close()
+    print "Cleanse Data: Complete"
 
 def mail(to, subject, text, attach):
     msg = MIMEMultipart()
@@ -172,6 +189,7 @@ def mail(to, subject, text, attach):
     mailServer.sendmail(gmail_user, to, msg.as_string())
     # Should be mailServer.quit(), but that crashes...
     mailServer.close()
+    print "Email transmission: Complete"
 
 if 'SourceFilePath' in ControlDict.keys() and 'ProcessedFilePath' in ControlDict.keys():
     BasicCounts(ControlDict['SourceFilePath'])
@@ -240,16 +258,6 @@ elif 'SourceFilePath' in ControlDict.keys() and 'ProcessedFilePath' not in Contr
     ReportFile.write("\nTotal row count = " + BasicCountsDict['NumRows'])
     ReportFile.write("\nTotal column count = " + BasicCountsDict['NumColumns'])
     ReportFile.write("\n______________________________________________________")
-    
-    BasicCounts(ControlDict['ProcessedFilePath'])
-    ReportFile.write("\nBasic Information: Processed File")
-    ReportFile.write("\nFile Name = " + BasicCountsDict['FileName'])
-    ReportFile.write("\nTotal row count = " + BasicCountsDict['NumRows'])
-    ReportFile.write("\nTotal column count = " + BasicCountsDict['NumColumns'])
-    ReportFile.write("\n______________________________________________________")
-    
-    CheckHeaders(ControlDict['SourceFilePath'])
-    ReportFile.write("\n______________________________________________________")
 
     CheckRowOffset(ControlDict['SourceFilePath'])
     ReportFile.write ("\n______________________________________________________")
@@ -304,17 +312,11 @@ elif 'SourceFilePath' not in ControlDict.keys() and 'ProcessedFilePath' in Contr
 
 ReportFile.write("\nProcess time = " + str(time.time() - start_time) + " seconds")        
 ReportFile.write("\n______________________________________________________")
+ReportFile.write("\nEmail Transmission: Complete")
+ReportFile.close()
 mail(ControlDict['email_recipient'],
    "Data Screen Utility: File Analysis Report",
    "Data Screen Utility: File Analysis Report for "+ ControlDict['SourceFilePath'],
    ControlDict['OutputReportPath'])
-ReportFile.write("\nEmail Transmission: Complete")
-ReportFile.close()
 ControlFile.close()
-
-
-
-
-
-
-
+raw_input("Process Complete. Press Enter to Exit.")
