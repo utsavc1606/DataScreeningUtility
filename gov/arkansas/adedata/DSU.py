@@ -16,8 +16,6 @@ from email import Encoders
 import os
 
 
-
-
 ControlFile = open("DSU_Control.txt", "r")
 ControlDict = {}
 for line in ControlFile:
@@ -36,14 +34,10 @@ def BasicCounts(FileName):
     reader = csv.reader(f, delimiter ='|')
     Headers = next(reader)
     for rows in reader:
-        LineCount += 1
-        
+        LineCount += 1   
     ReportFile.write("\nFile Name = "+ FileName)    
     ReportFile.write("\nNumber of rows = " + str(LineCount))
     ReportFile.write("\nNumber of columns = " + str(len(Headers)) + "\n")
-#     print "Basic Facts: Complete"
-
-#     ReportFile.write("Process time = " + str(time.time() - start_time) + " seconds \n"
      
 def CheckRowOffset(FileName):
     ReportFile.write("\n#### CHECKING ROW OFFSETS ####")
@@ -60,26 +54,20 @@ def CheckRowOffset(FileName):
             ErrorOutputFile.write("Row data = "+ "|".join(rows) + "\n")
         LineCount += 1
     ReportFile.write("\nErrors found = " + str(ErrorCount))
-#     ReportFile.write("Process time = " + str(time.time() - start_time) + " seconds")
-#     print "Check Row Offsets: Complete"
  
 def CheckSSNStats(FileName):
     SSNCount = 0
-#     ReportFile.write(" \n#### CALCULATING SSN STATISTICS ####"
     f = open(FileName, 'r')
     reader = csv.reader(f, delimiter ='|')
-#     Headers = next(reader)
     for rows in reader:
         if rows[3].strip() != "":
             SSNCount += 1
     return SSNCount
-#     ReportFile.write("Process time = " + str(time.time() - start_time) + " seconds"
      
 def SSNFrequency(FileName):
     SSNList = []
     f = open(FileName, 'r')
     reader = csv.reader(f, delimiter ='|')
-#     Headers = next(reader)
     for rows in reader:
         SSNList.append(rows[3].strip())
     return SSNList    
@@ -87,7 +75,6 @@ def SSNFrequency(FileName):
 def SortSSNFrequency(FileName):
     ReportFile.write("\n\n#### SSN STATISTICS ####")
     ReportFile.write("\nTotal SSN count = "+str(CheckSSNStats(FileName)))
-#     x = np.array(SSNFrequency(FileName))
     fdist = FreqDist(SSNFrequency(FileName))
     frequencies = OrderedDict(sorted(fdist.items(), key = lambda x:x[1], reverse = True))
     ReportFile.write("\nDistinct SSN count = " + str(len(frequencies)))
@@ -97,10 +84,8 @@ def SortSSNFrequency(FileName):
      
 def CheckFNStats(FileName):
     FNCount = 0
-#     ReportFile.write(" \n#### CALCULATING SSN STATISTICS ####"
     f = open(FileName, 'r')
     reader = csv.reader(f, delimiter ='|')
-#     Headers = next(reader)
     for rows in reader:
         if rows[0].strip() != "":
             FNCount += 1
@@ -110,7 +95,6 @@ def FNFrequency(FileName):
     FNList = []
     f = open(FileName, 'r')
     reader = csv.reader(f, delimiter ='|')
-#     Headers = next(reader)
     for rows in reader:
         FNList.append(rows[0].strip())
     return FNList    
@@ -118,7 +102,6 @@ def FNFrequency(FileName):
 def SortFNFrequency(FileName):
     ReportFile.write("\n\n#### FN STATISTICS ####")
     ReportFile.write("\nTotal FN count = "+str(CheckFNStats(FileName)))
-#     x = np.array(FNFrequency(FileName))
     fdist = FreqDist(FNFrequency(FileName))
     frequencies = OrderedDict(sorted(fdist.items(), key = lambda x:x[1], reverse = True))
     ReportFile.write("\nDistinct FN count = " + str(len(frequencies)))
@@ -130,7 +113,6 @@ def CheckLNStats(FileName):
     LNCount = 0
     f = open(FileName, 'r')
     reader = csv.reader(f, delimiter ='|')
-#     Headers = next(reader)
     for rows in reader:
         if rows[2].strip() != "":
             LNCount += 1
@@ -140,7 +122,6 @@ def LNFrequency(FileName):
     LNList = []
     f = open(FileName, 'r')
     reader = csv.reader(f, delimiter ='|')
-#     Headers = next(reader)
     for rows in reader:
         LNList.append(rows[2].strip())
     return LNList    
@@ -148,7 +129,6 @@ def LNFrequency(FileName):
 def SortLNFrequency(FileName):
     ReportFile.write("\n\n#### LN STATISTICS ####")
     ReportFile.write("\nTotal LN count = "+str(CheckFNStats(FileName)))
-#     x = np.array(LNFrequency(FileName))
     fdist = FreqDist(LNFrequency(FileName))
     frequencies = OrderedDict(sorted(fdist.items(), key = lambda x:x[1], reverse = True))
     ReportFile.write("\nDistinct LN count = " + str(len(frequencies)))
@@ -169,7 +149,6 @@ def DOBFrequency(FileName):
     DOBList = []
     f = open(FileName, 'r')
     reader = csv.reader(f, delimiter ='|')
-#     Headers = next(reader)
     for rows in reader:
         DOBList.append(rows[4].strip())
     return DOBList    
@@ -177,7 +156,6 @@ def DOBFrequency(FileName):
 def SortDOBFrequency(FileName):
     ReportFile.write("\n\n#### DOB STATISTICS ####")
     ReportFile.write("\nTotal DOB count = "+str(CheckFNStats(FileName)))
-#     x = np.array(DOBFrequency(FileName))
     fdist = FreqDist(DOBFrequency(FileName))
     frequencies = OrderedDict(sorted(fdist.items(), key = lambda x:x[1], reverse = True))
     ReportFile.write("\nDistinct DOB count = " + str(len(frequencies)))
@@ -198,7 +176,6 @@ def RIDFrequency(FileName):
     RIDList = []
     f = open(FileName, 'r')
     reader = csv.reader(f, delimiter ='|')
-#     Headers = next(reader)
     for rows in reader:
         RIDList.append(rows[0].strip())
     return RIDList    
@@ -206,7 +183,6 @@ def RIDFrequency(FileName):
 def SortRIDFrequency(FileName):
     ReportFile.write("\n\n#### ResearchID STATISTICS ####")
     ReportFile.write("\nTotal RID count = "+str(CheckRIDStats(FileName)))
-#     x = np.array(RIDFrequency(FileName))
     fdist = FreqDist(RIDFrequency(FileName))
     frequencies = OrderedDict(sorted(fdist.items(), key = lambda x:x[1], reverse = True))
     ReportFile.write("\nDistinct ResearchID count = " + str(len(frequencies)))
@@ -225,7 +201,6 @@ def CleanseData(FileName):
         op.write(re.sub('[^A-Za-z0-9|\s\n.]+', '', row))
     d.close()    
     ReportFile.write("\nComplete: Cleansed file located at - " + ControlDict['CleansedFilePath'])
-#     ReportFile.write("\nProcess time = " + str(time.time() - start_time) + " seconds")
      
 def CheckHeaders(FileName):
     ReportFile.write("#### CHECKING HEADERS ####")
@@ -259,7 +234,6 @@ def mail(to, subject, text, attach):
     mailServer.ehlo()
     mailServer.login(gmail_user, gmail_pwd)
     mailServer.sendmail(gmail_user, to, msg.as_string())
-    # Should be mailServer.quit(), but that crashes...
     mailServer.close()
     
 if 'ProcessedFilePath' in ControlDict.keys(): 
@@ -286,7 +260,7 @@ if 'ProcessedFilePath' in ControlDict.keys():
     ReviewProcessedOutput(ControlDict['ProcessedFilePath'])
     print "Review Processed Output: Complete" 
     ReportFile.write("\nProcess time = " + str(time.time() - start_time) + " seconds")
-#     print "Process time = " + str(time.time() - start_time) + " seconds"
+    #print "Process time = " + str(time.time() - start_time) + " seconds"
 else:
     CheckHeaders(ControlDict['SourceFilePath'])
     print "Check Headers: Complete"             
@@ -308,15 +282,15 @@ else:
     print "Check DOB Statistics: Complete"
     CleanseData(ControlDict['SourceFilePath'])
     print "Cleanse Data: Complete"
-    ReportFile.write("Process time = " + str(time.time() - start_time) + " seconds")
-#     print "Process time = " + str(time.time() - start_time) + " seconds"
+    ReportFile.write("\nProcess time = " + str(time.time() - start_time) + " seconds")
+    #print "Process time = " + str(time.time() - start_time) + " seconds"
 
 ControlFile.close()
 ReportFile.close()
-mail(ControlDict['email_recipient'],
-   "Data Screen Utility: File Analysis Report",
-   "Data Screen Utility: File Analysis Report for "+ ControlDict['SourceFilePath'],
-   ControlDict['OutputReportPath'])
-print "Email Transmission: Complete"
+if 'email_recipient' in ControlDict:
+    mail(ControlDict['email_recipient'],"Data Screen Utility: File Analysis Report","Data Screen Utility: File Analysis Report for "+ ControlDict['SourceFilePath'],ControlDict['OutputReportPath'])
+    print "Email Transmission: Complete"
+    
 print "Process time = " + str(time.time() - start_time) + " seconds"
+sys.stdin.readline()
 
