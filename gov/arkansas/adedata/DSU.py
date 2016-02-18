@@ -1,10 +1,9 @@
 '''
-Created on Feb 10, 2016
+Created on Feb 18, 2016
 
 @author: utsavchatterjee
 '''
 import csv
-import time
 from nltk.probability import FreqDist
 from collections import OrderedDict
 import re
@@ -14,7 +13,7 @@ from email.MIMEBase import MIMEBase
 from email.MIMEText import MIMEText
 from email import Encoders
 import os
-
+import time
 
 ControlFile = open("DSU_Control.txt", "r")
 ControlDict = {}
@@ -22,25 +21,35 @@ for line in ControlFile:
     (key, val) = line.split("=")
     ControlDict[key.strip()] = val.strip()
 gmail_user = ControlDict['sender_id']
-gmail_pwd = ControlDict['sender_password']
-
+gmail_pwd = ControlDict['sender_password']    
 ReportFile = open(ControlDict['OutputReportPath'], 'w')
 start_time = time.time()
- 
+
+
+BasicCountsDict = {} 
+SSNStatsDict = {}
+SSNFDDict = {}
+RIDFDDict = {}
+RIDStatsDict = {}
+FNStatsDict = {}
+FNFDDict = {}
+LNStatsDict = {}
+LNFDDict = {}
+DOBStatsDict = {}
+DOBFDDict = {}
+
 def BasicCounts(FileName):
-    ReportFile.write("\n\n#### BASIC FACTS ####")
     LineCount = 0
     f = open(FileName, 'r')
     reader = csv.reader(f, delimiter ='|')
     Headers = next(reader)
-    for rows in reader:
-        LineCount += 1   
-    ReportFile.write("\nFile Name = "+ FileName)    
-    ReportFile.write("\nNumber of rows = " + str(LineCount))
-    ReportFile.write("\nNumber of columns = " + str(len(Headers)) + "\n")
-     
+    for line in reader:
+        LineCount += 1
+    BasicCountsDict['FileName'] = FileName    
+    BasicCountsDict['NumRows'] = str(LineCount)
+    BasicCountsDict['NumColumns'] = str(len(Headers))
+
 def CheckRowOffset(FileName):
-    ReportFile.write("\n#### CHECKING ROW OFFSETS ####")
     ErrorOutputFile = open(ControlDict['OffsetRows'], 'w')
     LineCount = 1
     ErrorCount = 0
@@ -53,170 +62,97 @@ def CheckRowOffset(FileName):
             ErrorOutputFile.write("Row Location = "+ str(LineCount) + "\n") 
             ErrorOutputFile.write("Row data = "+ "|".join(rows) + "\n")
         LineCount += 1
-    ReportFile.write("\nErrors found = " + str(ErrorCount))
- 
-def CheckSSNStats(FileName):
-    SSNCount = 0
+    if ErrorCount > 0:
+        ReportFile.write("\nOffset Test: Failed. Please check offset rows at location "+ ControlDict['OffsetRows'])
+    else:
+        ReportFile.write("\nOffset Test: Passed.")
+
+def CheckHeaders(FileName):
     f = open(FileName, 'r')
     reader = csv.reader(f, delimiter ='|')
-    for rows in reader:
-        if rows[3].strip() != "":
-            SSNCount += 1
-    return SSNCount
-     
-def SSNFrequency(FileName):
+    Headers = next(reader)
+    if (Headers[0]=="FirstName" and Headers[1]=="MiddleName" and Headers[2]=="LastName" and Headers[3]=="SSN" and Headers[4]=="DOB"):
+        ReportFile.write ("\nHeaders Test: Passed")
+    else:
+        ReportFile.write ("\nHeaders Test: Failed. Please check first 5 headers.")
+
+def CheckSSNStats(FileName):
     SSNList = []
     f = open(FileName, 'r')
     reader = csv.reader(f, delimiter ='|')
-    for rows in reader:
-        SSNList.append(rows[3].strip())
-    return SSNList    
- 
-def SortSSNFrequency(FileName):
-    ReportFile.write("\n\n#### SSN STATISTICS ####")
-    ReportFile.write("\nTotal SSN count = "+str(CheckSSNStats(FileName)))
-    fdist = FreqDist(SSNFrequency(FileName))
+    for line in reader:
+        SSNList.append(line[3].strip())
+    SSNStatsDict['SSNCount'] = len(SSNList)-1
+    fdist = FreqDist(SSNList)
     frequencies = OrderedDict(sorted(fdist.items(), key = lambda x:x[1], reverse = True))
-    ReportFile.write("\nDistinct SSN count = " + str(len(frequencies)))
-    ReportFile.write("\n\n#### TOP 10 FREQUENCIES ####")
+    SSNStatsDict['DistinctSSNCount'] = len(frequencies)
     for k, v in frequencies.items()[:10]:
-        ReportFile.write("\n"+k+"    "+ str(v))
-     
-def CheckFNStats(FileName):
-    FNCount = 0
-    f = open(FileName, 'r')
-    reader = csv.reader(f, delimiter ='|')
-    for rows in reader:
-        if rows[0].strip() != "":
-            FNCount += 1
-    return FNCount
-     
-def FNFrequency(FileName):
-    FNList = []
-    f = open(FileName, 'r')
-    reader = csv.reader(f, delimiter ='|')
-    for rows in reader:
-        FNList.append(rows[0].strip())
-    return FNList    
- 
-def SortFNFrequency(FileName):
-    ReportFile.write("\n\n#### FN STATISTICS ####")
-    ReportFile.write("\nTotal FN count = "+str(CheckFNStats(FileName)))
-    fdist = FreqDist(FNFrequency(FileName))
-    frequencies = OrderedDict(sorted(fdist.items(), key = lambda x:x[1], reverse = True))
-    ReportFile.write("\nDistinct FN count = " + str(len(frequencies)))
-    ReportFile.write("\n\n#### TOP 10 FREQUENCIES ####")
-    for k, v in frequencies.items()[:10]:
-        ReportFile.write("\n"+k+"    "+str(v))
- 
-def CheckLNStats(FileName):
-    LNCount = 0
-    f = open(FileName, 'r')
-    reader = csv.reader(f, delimiter ='|')
-    for rows in reader:
-        if rows[2].strip() != "":
-            LNCount += 1
-    return LNCount
-     
-def LNFrequency(FileName):
-    LNList = []
-    f = open(FileName, 'r')
-    reader = csv.reader(f, delimiter ='|')
-    for rows in reader:
-        LNList.append(rows[2].strip())
-    return LNList    
- 
-def SortLNFrequency(FileName):
-    ReportFile.write("\n\n#### LN STATISTICS ####")
-    ReportFile.write("\nTotal LN count = "+str(CheckFNStats(FileName)))
-    fdist = FreqDist(LNFrequency(FileName))
-    frequencies = OrderedDict(sorted(fdist.items(), key = lambda x:x[1], reverse = True))
-    ReportFile.write("\nDistinct LN count = " + str(len(frequencies)))
-    ReportFile.write("\n\n#### TOP 10 FREQUENCIES ####")
-    for k, v in frequencies.items()[:10]:
-        ReportFile.write("\n"+k+"    "+str(v))
-     
-def CheckDOBStats(FileName):
-    DOBCount = 1
-    f = open(FileName, 'r')
-    reader = csv.reader(f, delimiter ='|')
-    for rows in reader:
-        if rows[4].strip() != "":
-            DOBCount += 1
-    return DOBCount
-     
-def DOBFrequency(FileName):
-    DOBList = []
-    f = open(FileName, 'r')
-    reader = csv.reader(f, delimiter ='|')
-    for rows in reader:
-        DOBList.append(rows[4].strip())
-    return DOBList    
- 
-def SortDOBFrequency(FileName):
-    ReportFile.write("\n\n#### DOB STATISTICS ####")
-    ReportFile.write("\nTotal DOB count = "+str(CheckFNStats(FileName)))
-    fdist = FreqDist(DOBFrequency(FileName))
-    frequencies = OrderedDict(sorted(fdist.items(), key = lambda x:x[1], reverse = True))
-    ReportFile.write("\nDistinct DOB count = " + str(len(frequencies)))
-    ReportFile.write("\n\n#### TOP 10 FREQUENCIES ####")
-    for k, v in frequencies.items()[:10]:
-        ReportFile.write("\n"+k+"    "+str(v))
-         
+        SSNFDDict[k]=v
+    SSNStatsDict['FreqDist'] = SSNFDDict
+    
 def CheckRIDStats(FileName):
-    RIDCount = 1
-    f = open(FileName, 'r')
-    reader = csv.reader(f, delimiter ='|')
-    for rows in reader:
-        if rows[0].strip() != "":
-            RIDCount += 1
-    return RIDCount-2
-     
-def RIDFrequency(FileName):
     RIDList = []
     f = open(FileName, 'r')
     reader = csv.reader(f, delimiter ='|')
-    for rows in reader:
-        RIDList.append(rows[0].strip())
-    return RIDList    
- 
-def SortRIDFrequency(FileName):
-    ReportFile.write("\n\n#### ResearchID STATISTICS ####")
-    ReportFile.write("\nTotal RID count = "+str(CheckRIDStats(FileName)))
-    fdist = FreqDist(RIDFrequency(FileName))
+    for line in reader:
+        RIDList.append(line[0].strip())
+    RIDStatsDict['RIDCount'] = len(RIDList)-1
+    fdist = FreqDist(RIDList)
     frequencies = OrderedDict(sorted(fdist.items(), key = lambda x:x[1], reverse = True))
-    ReportFile.write("\nDistinct ResearchID count = " + str(len(frequencies)))
-    ReportFile.write("\n\n#### TOP 10 FREQUENCIES ####")
+    RIDStatsDict['DistinctRIDCount'] = len(frequencies)
     for k, v in frequencies.items()[:10]:
-        ReportFile.write("\n"+k+"    "+str(v))
-    ReportFile.write("\n\n#### BOTTOM 10 FREQUENCIES ####")
-    for k, v in frequencies.items()[len(frequencies)-10:]:
-        ReportFile.write("\n"+k+"    "+str(v))
-     
+        RIDFDDict[k]=v
+    RIDStatsDict['FreqDist'] = RIDFDDict    
+    
+def CheckFNStats(FileName):
+    FNList = []
+    f = open(FileName, 'r')
+    reader = csv.reader(f, delimiter ='|')
+    for line in reader:
+        FNList.append(line[0].strip())
+    FNStatsDict['FNCount'] = len(FNList)-1
+    fdist = FreqDist(FNList)
+    frequencies = OrderedDict(sorted(fdist.items(), key = lambda x:x[1], reverse = True))
+    FNStatsDict['DistinctFNCount'] = len(frequencies)
+    for k, v in frequencies.items()[:10]:
+        FNFDDict[k]=v
+    FNStatsDict['FreqDist'] = FNFDDict    
+
+def CheckLNStats(FileName):
+    LNList = []
+    f = open(FileName, 'r')
+    reader = csv.reader(f, delimiter ='|')
+    for line in reader:
+        LNList.append(line[2].strip())
+    LNStatsDict['LNCount'] = len(LNList) - 1
+    fdist = FreqDist(LNList)
+    frequencies = OrderedDict(sorted(fdist.items(), key = lambda x:x[1], reverse = True))
+    LNStatsDict['DistinctLNCount'] = len(frequencies)
+    for k, v in frequencies.items()[:10]:
+        LNFDDict[k]=v
+    LNStatsDict['FreqDist'] = LNFDDict
+
+def CheckDOBStats(FileName):
+    DOBList = []
+    f = open(FileName, 'r')
+    reader = csv.reader(f, delimiter ='|')
+    for line in reader:
+        DOBList.append(line[4].strip())
+    DOBStatsDict['DOBCount'] = len(DOBList)-1
+    fdist = FreqDist(DOBList)
+    frequencies = OrderedDict(sorted(fdist.items(), key = lambda x:x[1], reverse = True))
+    DOBStatsDict['DistinctDOBCount'] = len(frequencies)
+    for k, v in frequencies.items()[:10]:
+        DOBFDDict[k]=v
+    DOBStatsDict['FreqDist'] = DOBFDDict
+
 def CleanseData(FileName):
-    ReportFile.write("\n\n#### CLEANSING DATA ####")
     d = open(FileName, "r")
     op = open(ControlDict['CleansedFilePath'], "w")
     for row in d:
         op.write(re.sub('[^A-Za-z0-9|\s\n.]+', '', row))
-    d.close()    
-    ReportFile.write("\nComplete: Cleansed file located at - " + ControlDict['CleansedFilePath'])
-     
-def CheckHeaders(FileName):
-    ReportFile.write("#### CHECKING HEADERS ####")
-    f = open(FileName, 'r')
-    reader = csv.reader(f, delimiter ='|')
-    Headers = next(reader)
-    HeaderList = ["FirstName", "MiddleName", "LastName", "SSN", "DOB"]
-    for h in Headers[:5]:
-        if h not in HeaderList:
-            ReportFile.write("\nError in Headers. Please review.")
-        else:
-            ReportFile.write("\nNo Errors.")
-             
-def ReviewProcessedOutput(FileName):
-    SortRIDFrequency(FileName)
-    
+    d.close()
+
 def mail(to, subject, text, attach):
     msg = MIMEMultipart()
     msg['From'] = gmail_user
@@ -234,63 +170,151 @@ def mail(to, subject, text, attach):
     mailServer.ehlo()
     mailServer.login(gmail_user, gmail_pwd)
     mailServer.sendmail(gmail_user, to, msg.as_string())
+    # Should be mailServer.quit(), but that crashes...
     mailServer.close()
-    
-if 'ProcessedFilePath' in ControlDict.keys(): 
-    CheckHeaders(ControlDict['SourceFilePath'])
-    print "Check Headers: Complete"             
-    BasicCounts(ControlDict['SourceFilePath'])        
-    print "Check Basic Counts: Complete"
-    CheckRowOffset(ControlDict['SourceFilePath'])
-    print "Check Row Offset: Complete"
-    CheckSSNStats(ControlDict['SourceFilePath'])
-    SortSSNFrequency(ControlDict['SourceFilePath'])
-    print "Check SSN Statistics: Complete"
-    CheckFNStats(ControlDict['SourceFilePath'])
-    SortFNFrequency(ControlDict['SourceFilePath'])    
-    print "Check FN Statistics: Complete"
-    CheckLNStats(ControlDict['SourceFilePath'])
-    SortLNFrequency(ControlDict['SourceFilePath']) 
-    print "Check LN Statistics: Complete"
-    CheckDOBStats(ControlDict['SourceFilePath'])
-    SortDOBFrequency(ControlDict['SourceFilePath'])      
-    print "Check DOB Statistics: Complete"
-    CleanseData(ControlDict['SourceFilePath'])
-    print "Cleanse Data: Complete"
-    ReviewProcessedOutput(ControlDict['ProcessedFilePath'])
-    print "Review Processed Output: Complete" 
-    ReportFile.write("\nProcess time = " + str(time.time() - start_time) + " seconds")
-    #print "Process time = " + str(time.time() - start_time) + " seconds"
-else:
-    CheckHeaders(ControlDict['SourceFilePath'])
-    print "Check Headers: Complete"             
-    BasicCounts(ControlDict['SourceFilePath'])        
-    print "Check Basic Counts: Complete"
-    CheckRowOffset(ControlDict['SourceFilePath'])
-    print "Check Row Offset: Complete"
-    CheckSSNStats(ControlDict['SourceFilePath'])
-    SortSSNFrequency(ControlDict['SourceFilePath'])
-    print "Check SSN Statistics: Complete"
-    CheckFNStats(ControlDict['SourceFilePath'])
-    SortFNFrequency(ControlDict['SourceFilePath'])    
-    print "Check FN Statistics: Complete"
-    CheckLNStats(ControlDict['SourceFilePath'])
-    SortLNFrequency(ControlDict['SourceFilePath']) 
-    print "Check LN Statistics: Complete"
-    CheckDOBStats(ControlDict['SourceFilePath'])
-    SortDOBFrequency(ControlDict['SourceFilePath'])      
-    print "Check DOB Statistics: Complete"
-    CleanseData(ControlDict['SourceFilePath'])
-    print "Cleanse Data: Complete"
-    ReportFile.write("\nProcess time = " + str(time.time() - start_time) + " seconds")
-    #print "Process time = " + str(time.time() - start_time) + " seconds"
 
-ControlFile.close()
-ReportFile.close()
-if 'email_recipient' in ControlDict:
-    mail(ControlDict['email_recipient'],"Data Screen Utility: File Analysis Report","Data Screen Utility: File Analysis Report for "+ ControlDict['SourceFilePath'],ControlDict['OutputReportPath'])
-    print "Email Transmission: Complete"
+if 'SourceFilePath' in ControlDict.keys() and 'ProcessedFilePath' in ControlDict.keys():
+    BasicCounts(ControlDict['SourceFilePath'])
+    ReportFile.write("Basic Information: Source File")
+    ReportFile.write("\nFile Name = " + BasicCountsDict['FileName'])
+    ReportFile.write("\nTotal row count = " + BasicCountsDict['NumRows'])
+    ReportFile.write("\nTotal column count = " + BasicCountsDict['NumColumns'])
+    ReportFile.write("\n______________________________________________________")
     
-print "Process time = " + str(time.time() - start_time) + " seconds"
-sys.stdin.readline()
+    BasicCounts(ControlDict['ProcessedFilePath'])
+    ReportFile.write("\nBasic Information: Processed File")
+    ReportFile.write("\nFile Name = " + BasicCountsDict['FileName'])
+    ReportFile.write("\nTotal row count = " + BasicCountsDict['NumRows'])
+    ReportFile.write("\nTotal column count = " + BasicCountsDict['NumColumns'])
+    ReportFile.write("\n______________________________________________________")
+    
+    CheckHeaders(ControlDict['SourceFilePath'])
+    ReportFile.write("\n______________________________________________________")
+
+    CheckRowOffset(ControlDict['SourceFilePath'])
+    ReportFile.write("\n______________________________________________________")
+    
+    CheckSSNStats(ControlDict['SourceFilePath'])
+    ReportFile.write("\nSSN Statistics")
+    ReportFile.write("\nTotal SSN count (Source File)= "+ str(SSNStatsDict['SSNCount']))
+    ReportFile.write("\nDistinct SSN count = "+ str(SSNStatsDict['DistinctSSNCount']))
+    ReportFile.write("\nTop 10 frequencies = " + str(SSNStatsDict['FreqDist']))
+    ReportFile.write("\n______________________________________________________") 
+    
+    CheckRIDStats(ControlDict['ProcessedFilePath'])
+    ReportFile.write("\nResearchID Statistics")
+    ReportFile.write("\nTotal RID count (Processed File)= "+ str(RIDStatsDict['RIDCount']))
+    ReportFile.write("\nDistinct RID count = "+ str(RIDStatsDict['DistinctRIDCount']))
+    ReportFile.write("\nTop 10 frequencies = " + str(RIDStatsDict['FreqDist']))
+    ReportFile.write("\n______________________________________________________")
+    
+    CheckFNStats(ControlDict['SourceFilePath'])
+    ReportFile.write("\nFirst Name Statistics")
+    ReportFile.write("\nTotal FN count (Source File)= "+ str(FNStatsDict['FNCount']))
+    ReportFile.write("\nDistinct FN count = "+ str(FNStatsDict['DistinctFNCount']))
+    ReportFile.write("\nTop 10 frequencies = " + str(FNStatsDict['FreqDist']))
+    ReportFile.write("\n______________________________________________________")
+    
+    CheckLNStats(ControlDict['SourceFilePath'])
+    ReportFile.write("\nLast Name Statistics")
+    ReportFile.write("\nTotal LN count (Source File)= "+ str(LNStatsDict['LNCount']))
+    ReportFile.write("\nDistinct LN count = "+ str(LNStatsDict['DistinctLNCount']))
+    ReportFile.write("\nTop 10 frequencies = " + str(LNStatsDict['FreqDist']))
+    ReportFile.write("\n______________________________________________________")
+    
+    CheckDOBStats(ControlDict['SourceFilePath'])
+    ReportFile.write("\nDate of Birth Statistics")
+    ReportFile.write("\nTotal DOB count (Source File)= "+ str(DOBStatsDict['DOBCount']))
+    ReportFile.write("\nDistinct DOB count = "+ str(DOBStatsDict['DistinctDOBCount']))
+    ReportFile.write("\nTop 10 frequencies = " + str(DOBStatsDict['FreqDist']))
+    ReportFile.write("\n______________________________________________________")
+    
+    
+    if str(ControlDict['CleanseData?']).upper() == "YES":
+        CleanseData(ControlDict['SourceFilePath'])
+    
+elif 'SourceFilePath' in ControlDict.keys() and 'ProcessedFilePath' not in ControlDict.keys():
+    BasicCounts(ControlDict['SourceFilePath'])
+    ReportFile.write("\nBasic Information: Source File")
+    ReportFile.write("\nFile Name = " + BasicCountsDict['FileName'])
+    ReportFile.write("\nTotal row count = " + BasicCountsDict['NumRows'])
+    ReportFile.write("\nTotal column count = " + BasicCountsDict['NumColumns'])
+    ReportFile.write("\n______________________________________________________")
+    
+    BasicCounts(ControlDict['ProcessedFilePath'])
+    ReportFile.write("\nBasic Information: Processed File")
+    ReportFile.write("\nFile Name = " + BasicCountsDict['FileName'])
+    ReportFile.write("\nTotal row count = " + BasicCountsDict['NumRows'])
+    ReportFile.write("\nTotal column count = " + BasicCountsDict['NumColumns'])
+    ReportFile.write("\n______________________________________________________")
+    
+    CheckHeaders(ControlDict['SourceFilePath'])
+    ReportFile.write("\n______________________________________________________")
+
+    CheckRowOffset(ControlDict['SourceFilePath'])
+    ReportFile.write ("\n______________________________________________________")
+    
+    CheckSSNStats(ControlDict['SourceFilePath'])
+    ReportFile.write("\nSSN Statistics")
+    ReportFile.write ("\nTotal SSN count (Source File) = "+ str(SSNStatsDict['SSNCount']))
+    ReportFile.write ("\nDistinct SSN count = "+ str(SSNStatsDict['DistinctSSNCount']))
+    ReportFile.write ("\nTop 10 frequencies = " + str(SSNStatsDict['FreqDist']))
+    ReportFile.write ("\n______________________________________________________") 
+        
+    CheckFNStats(ControlDict['SourceFilePath'])
+    ReportFile.write("\nFirst Name Statistics")
+    ReportFile.write("\nTotal FN count (Source File)= "+ str(FNStatsDict['FNCount']))
+    ReportFile.write("\nDistinct FN count = "+ str(FNStatsDict['DistinctFNCount']))
+    ReportFile.write("\nTop 10 frequencies = " + str(FNStatsDict['FreqDist']))
+    ReportFile.write("\n______________________________________________________")
+    
+    CheckLNStats(ControlDict['SourceFilePath'])
+    ReportFile.write("\nLast Name Statistics")
+    ReportFile.write("\nTotal LN count (Source File)= "+ str(LNStatsDict['LNCount']))
+    ReportFile.write("\nDistinct LN count = "+ str(LNStatsDict['DistinctLNCount']))
+    ReportFile.write("\nTop 10 frequencies = " + str(LNStatsDict['FreqDist']))
+    ReportFile.write("\n______________________________________________________")
+    
+    CheckDOBStats(ControlDict['SourceFilePath'])
+    ReportFile.write("\nDate of Birth Statistics")
+    ReportFile.write("\nTotal DOB count (Source File)= "+ str(DOBStatsDict['DOBCount']))
+    ReportFile.write("\nDistinct DOB count = "+ str(DOBStatsDict['DistinctDOBCount']))
+    ReportFile.write("\nTop 10 frequencies = " + str(DOBStatsDict['FreqDist']))
+    ReportFile.write("\n______________________________________________________")
+    
+    
+    if str(ControlDict['CleanseData?']).upper() == "YES":
+        CleanseData(ControlDict['SourceFilePath'])
+    
+elif 'SourceFilePath' not in ControlDict.keys() and 'ProcessedFilePath' in ControlDict.keys():
+    BasicCounts(ControlDict['ProcessedFilePath'])
+    ReportFile.write("\nBasic Information: Processed File")
+    ReportFile.write("\nFile Name = " + BasicCountsDict['FileName'])
+    ReportFile.write("\nTotal row count = " + BasicCountsDict['NumRows'])
+    ReportFile.write("\nTotal column count = " + BasicCountsDict['NumColumns'])
+    ReportFile.write("\n______________________________________________________")
+    
+    CheckRIDStats(ControlDict['ProcessedFilePath'])
+    ReportFile.write("\nResearchID Statistics")
+    ReportFile.write("\nTotal RID count (Processed File)= "+ str(RIDStatsDict['RIDCount']))
+    ReportFile.write("\nDistinct RID count = "+ str(RIDStatsDict['DistinctRIDCount']))
+    ReportFile.write("\nTop 10 frequencies = " + str(RIDStatsDict['FreqDist']))
+    ReportFile.write("\n______________________________________________________")
+    
+
+ReportFile.write("\nProcess time = " + str(time.time() - start_time) + " seconds")        
+ReportFile.write("\n______________________________________________________")
+mail(ControlDict['email_recipient'],
+   "Data Screen Utility: File Analysis Report",
+   "Data Screen Utility: File Analysis Report for "+ ControlDict['SourceFilePath'],
+   ControlDict['OutputReportPath'])
+ReportFile.write("\nEmail Transmission: Complete")
+ReportFile.close()
+ControlFile.close()
+
+
+
+
+
+
 
