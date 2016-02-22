@@ -44,6 +44,7 @@ LNStatsDict = {}
 LNFDDict = {}
 DOBStatsDict = {}
 DOBFDDict = {}
+ClusterSizeDict = {}
 
 
 def BasicCounts(FileName):
@@ -89,6 +90,7 @@ def CheckHeaders(FileName):
     
 def CheckSSNStats(FileName):
     SSNList = []
+    ClusterSizeList = []
     f = open(FileName, 'r')
     reader = csv.reader(f, delimiter ='|')
     for line in reader:
@@ -100,10 +102,20 @@ def CheckSSNStats(FileName):
     for k, v in frequencies.items()[:10]:
         SSNFDDict[k]=v
     SSNStatsDict['FreqDist'] = SSNFDDict
+    
+    for k, v in frequencies.items():
+        ClusterSizeList.append(v)
+    fdist2 = FreqDist(ClusterSizeList)
+    ClusterSizes = OrderedDict(sorted(fdist2.items(), key = lambda x:x[1], reverse = True))
+    for p, q in ClusterSizes.items():
+        ClusterSizeDict[p] = q
+    SSNStatsDict['ClusterSize'] = ClusterSizeDict
+    
     print "Check SSN Stats: Complete"
     
 def CheckRIDStats(FileName):
     RIDList = []
+    ClusterSizeList = []
     f = open(FileName, 'r')
     reader = csv.reader(f, delimiter ='|')
     for line in reader:
@@ -116,6 +128,14 @@ def CheckRIDStats(FileName):
         RIDFDDict[k]=v
     RIDStatsDict['FreqDist'] = RIDFDDict    
     print "Check RID Stats: Complete"
+    
+    for k, v in frequencies.items():
+        ClusterSizeList.append(v)
+    fdist2 = FreqDist(ClusterSizeList)
+    ClusterSizes = OrderedDict(sorted(fdist2.items(), key = lambda x:x[1], reverse = True))
+    for p, q in ClusterSizes.items():
+        ClusterSizeDict[p] = q
+    RIDStatsDict['ClusterSize'] = ClusterSizeDict
     
 def CheckFNStats(FileName):
     FNList = []
@@ -198,17 +218,17 @@ if 'SourceFilePath' in ControlDict.keys() and 'ProcessedFilePath' in ControlDict
     ReportFile.write("\nTotal row count = " + BasicCountsDict['NumRows'])
     ReportFile.write("\nTotal column count = " + BasicCountsDict['NumColumns'])
     ReportFile.write("\n______________________________________________________")
-    
+     
     BasicCounts(ControlDict['ProcessedFilePath'])
     ReportFile.write("\nBasic Information: Processed File")
     ReportFile.write("\nFile Name = " + BasicCountsDict['FileName'])
     ReportFile.write("\nTotal row count = " + BasicCountsDict['NumRows'])
     ReportFile.write("\nTotal column count = " + BasicCountsDict['NumColumns'])
     ReportFile.write("\n______________________________________________________")
-    
+     
     CheckHeaders(ControlDict['SourceFilePath'])
     ReportFile.write("\n______________________________________________________")
-
+ 
     CheckRowOffset(ControlDict['SourceFilePath'])
     ReportFile.write("\n______________________________________________________")
     
@@ -216,38 +236,41 @@ if 'SourceFilePath' in ControlDict.keys() and 'ProcessedFilePath' in ControlDict
     ReportFile.write("\nSSN Statistics")
     ReportFile.write("\nTotal SSN count (Source File)= "+ str(SSNStatsDict['SSNCount']))
     ReportFile.write("\nDistinct SSN count = "+ str(SSNStatsDict['DistinctSSNCount']))
-    ReportFile.write("\nTop 10 frequencies = " + str(SSNStatsDict['FreqDist']))
+    ReportFile.write("\nCluster Sizes = " + str(SSNStatsDict['ClusterSize']))
     ReportFile.write("\n______________________________________________________") 
     
     CheckRIDStats(ControlDict['ProcessedFilePath'])
     ReportFile.write("\nResearchID Statistics")
     ReportFile.write("\nTotal RID count (Processed File)= "+ str(RIDStatsDict['RIDCount']))
     ReportFile.write("\nDistinct RID count = "+ str(RIDStatsDict['DistinctRIDCount']))
-    ReportFile.write("\nTop 10 frequencies = " + str(RIDStatsDict['FreqDist']))
+    ReportFile.write("\nCluster Sizes = " + str(RIDStatsDict['ClusterSize']))
     ReportFile.write("\n______________________________________________________")
-    
+     
     CheckFNStats(ControlDict['SourceFilePath'])
     ReportFile.write("\nFirst Name Statistics")
     ReportFile.write("\nTotal FN count (Source File)= "+ str(FNStatsDict['FNCount']))
     ReportFile.write("\nDistinct FN count = "+ str(FNStatsDict['DistinctFNCount']))
     ReportFile.write("\nTop 10 frequencies = " + str(FNStatsDict['FreqDist']))
     ReportFile.write("\n______________________________________________________")
-    
+     
     CheckLNStats(ControlDict['SourceFilePath'])
     ReportFile.write("\nLast Name Statistics")
     ReportFile.write("\nTotal LN count (Source File)= "+ str(LNStatsDict['LNCount']))
     ReportFile.write("\nDistinct LN count = "+ str(LNStatsDict['DistinctLNCount']))
     ReportFile.write("\nTop 10 frequencies = " + str(LNStatsDict['FreqDist']))
     ReportFile.write("\n______________________________________________________")
-    
+     
     CheckDOBStats(ControlDict['SourceFilePath'])
     ReportFile.write("\nDate of Birth Statistics")
     ReportFile.write("\nTotal DOB count (Source File)= "+ str(DOBStatsDict['DOBCount']))
     ReportFile.write("\nDistinct DOB count = "+ str(DOBStatsDict['DistinctDOBCount']))
     ReportFile.write("\nTop 10 frequencies = " + str(DOBStatsDict['FreqDist']))
     ReportFile.write("\n______________________________________________________")
-    
-    
+     
+    ReportFile.write("\nTop 10 frequencies = " + str(SSNStatsDict['FreqDist']))
+     
+    ReportFile.write("\nTop 10 frequencies = " + str(RIDStatsDict['FreqDist']))
+     
     if str(ControlDict['CleanseData?']).upper() == "YES":
         CleanseData(ControlDict['SourceFilePath'])
     
@@ -319,4 +342,5 @@ mail(ControlDict['email_recipient'],
    "Data Screen Utility: File Analysis Report for "+ ControlDict['SourceFilePath'],
    ControlDict['OutputReportPath'])
 ControlFile.close()
-raw_input("Process Complete. Press Enter to Exit.")
+raw_input("Press Enter to Exit.")
+
